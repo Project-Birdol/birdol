@@ -21,6 +21,31 @@ public class Manager : MonoBehaviour
     public AudioSource seplayer;
     public AudioSource subseplayer;
 
+    private float targetAspectRatio = 9f / 16f;
+
+    void AdjustWindow()
+    {
+        // 現在のウィンドウのアスペクト比
+        float currentAspectRatio = (float)Screen.width / Screen.height;
+
+        // 目的のアスペクト比を保持しつつ最適な解像度を設定
+        if (Mathf.Abs(currentAspectRatio - targetAspectRatio) > 0.01f) // ある程度の許容範囲内で調整
+        {
+            if (currentAspectRatio > targetAspectRatio)
+            {
+                // 幅が広すぎる場合、高さに合わせて幅を調整
+                int properWidth = Mathf.RoundToInt(Screen.height * targetAspectRatio);
+                Screen.SetResolution(properWidth, Screen.height, false);
+            }
+            else
+            {
+                // 高さが高すぎる場合、幅に合わせて高さを調整
+                int properHeight = Mathf.RoundToInt(Screen.width / targetAspectRatio);
+                Screen.SetResolution(Screen.width, properHeight, false);
+            }
+        }
+    }
+
     private void Awake()
     {
         Application.targetFrameRate = 60;
@@ -52,6 +77,7 @@ public class Manager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        AdjustWindow();
         Common.loadingTips = tips;
         Common.bgmplayer = bgmplayer;
         Common.bgmplayer.volume = Common.BGMVol / Common.bgmmaxvol;
@@ -74,6 +100,7 @@ public class Manager : MonoBehaviour
             StartCoroutine(StateChange());
         }
         Updater();
+        AdjustWindow();
     }
 
     [SerializeField] gamestate forTest;
