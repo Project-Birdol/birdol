@@ -17,10 +17,34 @@ public class Manager : MonoBehaviour
     public GameObject gif;
     public Text tips;
     public Text downloadingProgress;
-    private const string downloadingHint = "初期データ(220MB)をダウンロードしています。少々お待ちください。";
     public AudioSource bgmplayer;
     public AudioSource seplayer;
     public AudioSource subseplayer;
+
+    private float targetAspectRatio = 9f / 16f;
+
+    void AdjustWindow()
+    {
+        // 現在のウィンドウのアスペクト比
+        float currentAspectRatio = (float)Screen.width / Screen.height;
+
+        // 目的のアスペクト比を保持しつつ最適な解像度を設定
+        if (Mathf.Abs(currentAspectRatio - targetAspectRatio) > 0.01f) // ある程度の許容範囲内で調整
+        {
+            if (currentAspectRatio > targetAspectRatio)
+            {
+                // 幅が広すぎる場合、高さに合わせて幅を調整
+                int properWidth = Mathf.RoundToInt(Screen.height * targetAspectRatio);
+                Screen.SetResolution(properWidth, Screen.height, false);
+            }
+            else
+            {
+                // 高さが高すぎる場合、幅に合わせて高さを調整
+                int properHeight = Mathf.RoundToInt(Screen.width / targetAspectRatio);
+                Screen.SetResolution(Screen.width, properHeight, false);
+            }
+        }
+    }
 
     private void Awake()
     {
@@ -29,7 +53,6 @@ public class Manager : MonoBehaviour
         Common.loadingGif = gif;
         Common.loadingGif.GetComponent<GifPlayer>().index = 0;
         Common.loadingGif.GetComponent<GifPlayer>().StartGif();
-        Common.CreateRsaKeyPair();//Android�������΍�
         if (manager == null)
         {
             manager = this;
@@ -39,24 +62,6 @@ public class Manager : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-    }
-
-    public void startDownloadAsset()
-    {
-        askDownloadDialog.SetActive(false);
-        StartCoroutine(AssetBundleLoader.DownloadAndCache(downloadingAssetCanvas, downloadAssetFailed, askDownloadDialog,(progress) =>
-        {
-            downloadingProgress.text = downloadingHint + $"({(int)(progress * 100 + 9)}%)";
-        }));
-    }
-
-    public void retryDownloadAsset()
-    {
-        downloadAssetFailed.SetActive(false);
-        StartCoroutine(AssetBundleLoader.DownloadAndCache(downloadingAssetCanvas, downloadAssetFailed, askDownloadDialog,(progress) =>
-        {
-            downloadingProgress.text = downloadingHint + $"({(int)(progress*100+9)}%)";
-        }));
     }
 
     public void exitGame()
@@ -72,17 +77,18 @@ public class Manager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        AdjustWindow();
         Common.loadingTips = tips;
         Common.bgmplayer = bgmplayer;
-        Common.bgmplayer.volume = Common.BGMVol/Common.bgmmaxvol;
+        Common.bgmplayer.volume = Common.BGMVol / Common.bgmmaxvol;
         Common.seplayer = seplayer;
         Common.seplayer.volume = Common.SEVol;
         Common.subseplayer = subseplayer;
-        Common.subseplayer.volume = Common.SEVol/Common.semaxvol;
-        StartCoroutine(AssetBundleLoader.DownloadAndCache(downloadingAssetCanvas, downloadAssetFailed, askDownloadDialog,(progress) =>
-        {
-            downloadingProgress.text = downloadingHint + $"({(int)(progress * 100+9)}%)";
-        }));
+        Common.subseplayer.volume = Common.SEVol / Common.semaxvol;
+        Common.initCharacters();
+        Common.initSounds();
+        DatabaseManager.InitializeDatabase();
+        Manager.manager.StateQueue((int)gamestate.Title);
     }
 
     int cnt = 15;
@@ -94,8 +100,9 @@ public class Manager : MonoBehaviour
             StartCoroutine(StateChange());
         }
         Updater();
+        AdjustWindow();
     }
-    
+
     [SerializeField] gamestate forTest;
 
 

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UIchanger : MonoBehaviour{
+public class UIchanger : MonoBehaviour
+{
     public GameObject Score_Text; //スコアテキストのUI指定
     public int Score_num; //スコアに表示する値(6桁以下の整数)
     public int characterId;
@@ -19,11 +20,12 @@ public class UIchanger : MonoBehaviour{
     public GameObject Score_Image; //スコア用画像のUI指定
     public Sprite[] Score_Sprites; //スコア用画像の配列
 
-    void Start(){ //Start時にUIを全て変更
+    void Start()
+    { //Start時にUIを全て変更
         Score_Text.GetComponent<Text>().text = Score_num.ToString("000,000");
         Judge_Image.GetComponent<Image>().sprite = Judge_Sprites[Judge_Image_num];
         //Chara_Image.GetComponent<Image>().sprite = Chara_Sprites[Chara_Image_num];
-        Chara_Image.GetComponent<Image>().sprite = Common.bundle.LoadAsset<Sprite>(Chara_Image_num.ToString());
+        Chara_Image.GetComponent<Image>().sprite = Resources.Load<Sprite>("Images/standimage/" + Chara_Image_num);
         Achievement_Image.GetComponent<Image>().fillAmount = Achievement_num;
         Achievement_Text.GetComponent<Text>().text = Achievement_num.ToString("P0");
         Score_Image.GetComponent<Image>().sprite = Score_Sprites[Judge_Image_num];
@@ -62,31 +64,26 @@ public class UIchanger : MonoBehaviour{
 #endif
     }
 
-    public void onClick(){
+    public void onClick()
+    {
         Common.subseplayer.PlayOneShot(Common.seclips["ok1"]);
         Common.loadingCanvas.SetActive(true);
         Common.loadingGif.GetComponent<GifPlayer>().index = 0;
         Common.loadingGif.GetComponent<GifPlayer>().StartGif();
         Common.bgmplayer.Stop();
         Common.bgmplayer.time = 0;
-        if (Judge_Image_num==0)
+        if (Judge_Image_num == 0)
         {   //Success
-            Common.mainstoryid = Common.mainstoryid.Replace("b", "c");
-            UpdateMainStoryWebClient webClient = new UpdateMainStoryWebClient(WebClient.HttpRequestMethod.Put, $"/api/{Common.api_version}/gamedata/story");
-            Common.lessonCount = 5;
-            webClient.SetData(Common.mainstoryid, Common.lessonCount);
-            webClient.sceneid = (int)gamestate.Story;
-            StartCoroutine(webClient.Send());
+            var newMainStoryId = Common.MainStoryId.Replace("b", "c");
+            ProgressService.UpdateStory(newMainStoryId, 5, (int)gamestate.Story);
         }
         else
         {
             //Failed
-            FinishProgressWebClient webClient = new FinishProgressWebClient(WebClient.HttpRequestMethod.Put, $"/api/{Common.api_version}/gamedata/complete");
-            webClient.SetData();
-            webClient.sceneid = (int)gamestate.Failed;
-            StartCoroutine(webClient.Send());
+            ProgressService.EndProgress();
+            ProgressService.EndStory((int)gamestate.Failed);
         }
     }
 
-   
+
 }

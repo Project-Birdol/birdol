@@ -90,15 +90,15 @@ public class RunGacha : MonoBehaviour
 
         seclips = new Dictionary<string, AudioClip>()
         {
-            {"ok1", Common.bundle.LoadAsset<AudioClip>("ok1") },
-            {"hukakishitakaraue1", Common.bundle.LoadAsset<AudioClip>("hukakishitakaraue1") },
-            {"hukakitemaekaraoku1", Common.bundle.LoadAsset<AudioClip>("hukakitemaekaraoku1") },
-            {"tamagouekarashita1", Common.bundle.LoadAsset<AudioClip>("youkiakeru1") },
-            {"youkiakeru1", Common.bundle.LoadAsset<AudioClip>("tamagouekarashita1") },
-            {"karatoreru1", Common.bundle.LoadAsset<AudioClip>("karatoreru1") },
-            {"haneochiru_Srare1", Common.bundle.LoadAsset<AudioClip>("haneochiru_Srare1") },
-            {"touzyou_common1", Common.bundle.LoadAsset<AudioClip>("touzyou_common1") },
-            {"touzyou_Srare1", Common.bundle.LoadAsset<AudioClip>("touzyou_Srare1") },
+            {"ok1", (AudioClip)Resources.Load("SE/ok1") },
+            {"hukakishitakaraue1", (AudioClip)Resources.Load("SE/gacha/hukakishitakaraue1") },
+            {"hukakitemaekaraoku1", (AudioClip)Resources.Load("SE/gacha/hukakitemaekaraoku1") },
+            {"tamagouekarashita1", (AudioClip)Resources.Load("SE/gacha/youkiakeru1") },
+            {"youkiakeru1", (AudioClip)Resources.Load("SE/gacha/tamagouekarashita1") },
+            {"karatoreru1", (AudioClip)Resources.Load("SE/gacha/karatoreru1") },
+            {"haneochiru_Srare1", (AudioClip)Resources.Load("SE/gacha/haneochiru_Srare1") },
+            {"touzyou_common1", (AudioClip)Resources.Load("SE/gacha/touzyou_common1") },
+            {"touzyou_Srare1", (AudioClip)Resources.Load("SE/gacha/touzyou_Srare1") },
         };
     }
 
@@ -108,21 +108,14 @@ public class RunGacha : MonoBehaviour
     {
         if (!triggerdPlayer && SceneManager.GetActiveScene().name == "Gacha")
         {
-            Common.bgmplayer.clip = Common.bundle.LoadAsset<AudioClip>("BG08");
+            Common.bgmplayer.clip = (AudioClip)Resources.Load("Music/BG08");
             Common.bgmplayer.Play();
             triggerdPlayer = true;
         }
 
-#if UNITY_WSA
         if (Input.GetMouseButton(0))
         {
-#else
-        if (Input.touchCount == 1)
-        {
-            if (Input.GetTouch(0).phase == TouchPhase.Ended) 
-            {
-#endif
-                if (!result10.activeSelf && !isResultShowing)
+            if (!result10.activeSelf && !isResultShowing)
                 {
                     GameObject.Find("Tap").GetComponent<Text>().text = "";
                     onButtonPressed10();
@@ -134,10 +127,6 @@ public class RunGacha : MonoBehaviour
                 {
                     isSkip = true;
                 }
-#if UNITY_WSA
-#else
-            }
-#endif
         }
     }
 
@@ -275,7 +264,7 @@ public class RunGacha : MonoBehaviour
     IEnumerator charText()
     {
         skillImage.enabled = true;
-        skillImage.sprite = Resources.Load<Sprite>("Images/gacha/Rare/"+cm.id);
+        skillImage.sprite = Resources.Load<Sprite>("Images/gacha/Rare/" + cm.id);
         yield return new WaitForSeconds(3);
         Common.subseplayer.PlayOneShot(seclips["touzyou_Srare1"]);
         StartCoroutine("whiteOutAndShowChar");
@@ -387,7 +376,7 @@ public class RunGacha : MonoBehaviour
     public void NextResult()
     {
         CharacterModel cm = Common.characters[result[resultIndex]];
-        resultImage.sprite = Common.bundle.LoadAsset<Sprite>("gacha" + result[resultIndex]);
+        resultImage.sprite = Resources.Load<Sprite>("Images/gacha/CharImg/gacha" + result[resultIndex]);
         backGround.sprite = backGrounds[cm.rarity];
         nameLabel.text = cm.name;
         setNameAlpha(1);
@@ -448,10 +437,7 @@ public class RunGacha : MonoBehaviour
         Common.bgmplayer.time = 0;
         GachaUnitManager.initid = result;
         GachaUnitManager.teachers.Clear();
-        //ここで殿堂入りバードル一覧を取得するAPIを呼び出す
-        GetCompletedWebClient getCompletedWebClient = new GetCompletedWebClient(WebClient.HttpRequestMethod.Get, $"/api/{Common.api_version}/gamedata/complete?session_id=" + Common.SessionID);
-        getCompletedWebClient.target = "gachaunit";
-        StartCoroutine(getCompletedWebClient.Send());
+        ProgressService.FetchCompletedProgressAndUpdateGameStatus("gachaunit");
     }
 
     float QuadEase(float y1, float y2, float t)

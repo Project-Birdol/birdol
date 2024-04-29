@@ -39,7 +39,7 @@ public class StoryController : MonoBehaviour
     IEnumerator coroutine;
     Queue<GameObject> selectionqueue = new Queue<GameObject>();
 
-    private Color normal = new Color(1f,1f,1f);
+    private Color normal = new Color(1f, 1f, 1f);
     private Color dark = new Color(0.5f, 0.5f, 0.5f);
 
     Dictionary<string, AudioClip> seclips;
@@ -62,45 +62,41 @@ public class StoryController : MonoBehaviour
         }
         else
         {
-            datas = Resources.Load<TextAsset>("story/" + Common.mainstoryid).ToString().Split(
+            Debug.Log("Story Name:");
+            Debug.Log(Common.MainStoryId);
+            datas = Resources.Load<TextAsset>("story/" + Common.MainStoryId).ToString().Split(
             new[] { "\r\n", "\r", "\n" },
             StringSplitOptions.None
             );
         }
         seclips = new Dictionary<string, AudioClip>()
         {
-            {"ドア閉め", Common.bundle.LoadAsset<AudioClip>("ドア閉め") },
-            {"拍手", Common.bundle.LoadAsset<AudioClip>("拍手") },
-            {"拍手2", Common.bundle.LoadAsset<AudioClip>("拍手2") },
-            {"歓声", Common.bundle.LoadAsset<AudioClip>("歓声") },
-            {"歩く", Common.bundle.LoadAsset<AudioClip>("歩く") },
-            {"紙擦れ", Common.bundle.LoadAsset<AudioClip>("紙擦れ") },
-            {"駆け足", Common.bundle.LoadAsset<AudioClip>("駆け足") },
-            {"ok1", Common.bundle.LoadAsset<AudioClip>("ok1") },
-            {"tsukamu1", Common.bundle.LoadAsset<AudioClip>("tsukamu1") },
+            {"ドア閉め", (AudioClip)Resources.Load("SE/story/ドア閉め") },
+            {"拍手", (AudioClip)Resources.Load("SE/story/拍手") },
+            {"拍手2", (AudioClip)Resources.Load("SE/story/拍手2") },
+            {"歓声", (AudioClip)Resources.Load("SE/story/歓声") },
+            {"歩く", (AudioClip)Resources.Load("SE/story/歩く") },
+            {"紙擦れ", (AudioClip)Resources.Load("SE/story/紙擦れ") },
+            {"駆け足", (AudioClip)Resources.Load("SE/story/駆け足") },
+            {"ok1", (AudioClip)Resources.Load("SE/ok1") },
+            {"tsukamu1", (AudioClip)Resources.Load("SE/live/tsukamu1") },
         };
         size = datas.Length;
         UpdateDialog();
     }
 
-    private IEnumerator UpdateSub()
+    private void UpdateSub()
     {
-        UpdateCharacterWebClient characterWebClient = new UpdateCharacterWebClient(WebClient.HttpRequestMethod.Put, $"/api/{Common.api_version}/gamedata/character");
-        characterWebClient.isReturnLesson = true;
-        characterWebClient.SetData();
-        yield return characterWebClient.Send();
-        if(Common.lessonCount > 0)
+        ProgressService.UpdateProgress(Common.progresses);
+        if (Common.lessonCount > 0)
         {
             Manager.manager.StateQueue((int)gamestate.Lesson);
         }
         else
         {
-            UpdateMainStoryWebClient storyWebClient = new UpdateMainStoryWebClient(WebClient.HttpRequestMethod.Put, $"/api/{Common.api_version}/gamedata/story");
-            Common.mainstoryid = Common.mainstoryid.Replace("a", "b");
-            storyWebClient.SetData(Common.mainstoryid, 5);
+            var newMainStoryId = Common.MainStoryId.Replace("a", "b");
+            ProgressService.UpdateStory(newMainStoryId, 5, (int)gamestate.Story);
             StoryController.isSubStory = false;
-            storyWebClient.sceneid = (int)gamestate.Story;
-            yield return storyWebClient.Send();
         }
     }
 
@@ -111,7 +107,7 @@ public class StoryController : MonoBehaviour
         isFading = true;
         Color color = black.color;
         var fixedUpdate = new WaitForFixedUpdate();
-        while(color.a <= 1)
+        while (color.a <= 1)
         {
             color.a += 0.01f;
             black.color = color;
@@ -150,60 +146,57 @@ public class StoryController : MonoBehaviour
         Common.seplayer.Stop();
         Common.bgmplayer.time = 0;
         Common.seplayer.time = 0;
+        string newMainStoryId = Common.MainStoryId;
+        int newSceneId = -1;
         if (isSubStory)
         {
             isSubStory = false;
-            StartCoroutine(UpdateSub());
+            UpdateSub();
         }
         else
         {
             isSubStory = false;
-            if (Common.mainstoryid == "opening")
+            if (Common.MainStoryId == "opening")
             {
-                Common.mainstoryid = "0";
-                sceneid = (int)gamestate.Story;
+                newMainStoryId = "0";
+                newSceneId = (int)gamestate.Story;
             }
-            else if (Common.mainstoryid == "0")
+            else if (Common.MainStoryId == "0")
             {
-                sceneid = (int)gamestate.Gacha;
+                newSceneId = (int)gamestate.Gacha;
             }
-            else if (Common.mainstoryid == "8c")
+            else if (Common.MainStoryId == "8c")
             {
-                Common.mainstoryid = "ending";
-                sceneid = (int)gamestate.Story;
+                newMainStoryId = "ending";
+                newSceneId = (int)gamestate.Story;
             }
-            else if (Common.mainstoryid == "ending")
+            else if (Common.MainStoryId == "ending")
             {
-                FinishProgressWebClient finishiClient = new FinishProgressWebClient(WebClient.HttpRequestMethod.Put, $"/api/{Common.api_version}/gamedata/complete");
-                finishiClient.sceneid = (int)gamestate.Ending;
-                finishiClient.SetData();
-                StartCoroutine(finishiClient.Send());
+                ProgressService.EndProgress();
+                ProgressService.EndStory((int)gamestate.Ending);
                 return;
             }
-            else if (Common.mainstoryid.EndsWith("a"))
+            else if (Common.MainStoryId.EndsWith("a"))
             {
                 //To Lesson
-                sceneid = (int)gamestate.Lesson;
+                newSceneId = (int)gamestate.Lesson;
             }
-            else if (Common.mainstoryid.EndsWith("b"))
+            else if (Common.MainStoryId.EndsWith("b"))
             {
                 //To Live
-                sceneid = (int)gamestate.Live;
+                newSceneId = (int)gamestate.Live;
             }
-            else if (Common.mainstoryid.EndsWith("c"))
+            else if (Common.MainStoryId.EndsWith("c"))
             {
                 //To Live
-                Common.mainstoryid = (Int32.Parse(Common.mainstoryid.Replace("c", "")) + 1) + "a";
-                sceneid = (int)gamestate.Story;
+                newMainStoryId = (Int32.Parse(Common.MainStoryId.Replace("c", "")) + 1) + "a";
+                newSceneId = (int)gamestate.Story;
             }
+
 #if UNITY_EDITOR
             Debug.Log(Common.progressId);
 #endif
-            UpdateMainStoryWebClient webClient = new UpdateMainStoryWebClient(WebClient.HttpRequestMethod.Put, $"/api/{Common.api_version}/gamedata/story");
-            Common.lessonCount = 5;
-            webClient.SetData(Common.mainstoryid, Common.lessonCount);
-            webClient.sceneid = sceneid;
-            StartCoroutine(webClient.Send());
+            ProgressService.UpdateStory(newMainStoryId, 5, newSceneId);
         }
 
     }
@@ -212,7 +205,7 @@ public class StoryController : MonoBehaviour
     string condId;
     public void UpdateDialog()
     {
-        if (!showingseifu&&!selectionDialog.active&&!isFading)
+        if (!showingseifu && !selectionDialog.active && !isFading)
         {
             if (currentline >= size)
             {
@@ -227,7 +220,7 @@ public class StoryController : MonoBehaviour
             Debug.Log("Data:" + data);
 #endif
             currentline++;
-           if (data.StartsWith("##") && allowShowing)
+            if (data.StartsWith("##") && allowShowing)
             {
                 String name = data.Substring(2);
                 String filename = "";
@@ -239,8 +232,8 @@ public class StoryController : MonoBehaviour
                     filename = arr[0];
                     dir = arr[1];
                 }
-                if(dir=="l") leftImage.sprite = Common.bundle.LoadAsset<Sprite>(filename);
-                else rightImage.sprite = Common.bundle.LoadAsset<Sprite>(filename);
+                if (dir == "l") leftImage.sprite = Resources.Load<Sprite>("Images/standimage/" + filename.Normalize());
+                else rightImage.sprite = Resources.Load<Sprite>("Images/standimage/" + filename.Normalize());
                 characterName.text = name;
                 UpdateDialog();
             }
@@ -254,7 +247,7 @@ public class StoryController : MonoBehaviour
                     filename = data.Substring(data.IndexOf("(") + 1).Replace(")", "");
                     if (characterImage.enabled)
                     {
-                        characterImage.sprite = Common.bundle.LoadAsset<Sprite>(filename);
+                        characterImage.sprite = Resources.Load<Sprite>("Images/standimage/" + filename.Normalize());
                     }
                     else
                     {
@@ -284,7 +277,8 @@ public class StoryController : MonoBehaviour
                 selcount = 0;
                 selectionDialog.SetActive(true);
             }
-            else if (data.StartsWith("/")){
+            else if (data.StartsWith("/"))
+            {
                 if (data.StartsWith("///"))
                 {
                     if (data.EndsWith("start"))
@@ -384,7 +378,7 @@ public class StoryController : MonoBehaviour
                 {
                     int ctlength = data.IndexOf(")") - data.IndexOf("(") - 1;
                     string filename = data.Substring(data.IndexOf("(") + 1, ctlength);
-                    background.sprite = Common.bundle.LoadAsset<Sprite>(filename);
+                    background.sprite = Resources.Load<Sprite>("Images/UI_Background/" + filename.Normalize());
 
                 }
                 else if (data.StartsWith("/BGM一時停止") && allowShowing)
@@ -402,29 +396,29 @@ public class StoryController : MonoBehaviour
 #if UNITY_EDITOR
                     Debug.Log("BGM:" + bgm);
 #endif
-                    if(bgm != "無音")
+                    if (bgm != "無音")
                     {
                         Common.bgmplayer.Stop();
 
                         Common.bgmplayer.time = 0;
-                        Common.bgmplayer.clip = Common.bundle.LoadAsset<AudioClip>(bgm);
+                        Common.bgmplayer.clip = (AudioClip)Resources.Load("Music/" + bgm);
                         Common.bgmplayer.Play();
                     }
                 }
                 else if (data.StartsWith("/active") && allowShowing)
                 {
                     skipButton.SetActive(true);
-                    foreach (ProgressModel progress in Common.progresses)
+                    for (int i = 0; i < 5; i++)
                     {
-                        if(progress.ActiveSkillLevel<5) progress.ActiveSkillLevel++;
+                        if (Common.progresses[i].ActiveSkillLevel < 5) Common.progresses[i].ActiveSkillLevel++;
                     }
                 }
                 else if (data.StartsWith("/passive") && allowShowing)
                 {
                     skipButton.SetActive(true);
-                    foreach (ProgressModel progress in Common.progresses)
+                    for (int i = 0; i < 5; i++)
                     {
-                        if (progress.PassiveSkillLevel < 5) progress.PassiveSkillLevel++;
+                        if (Common.progresses[i].PassiveSkillLevel < 5) Common.progresses[i].PassiveSkillLevel++;
                     }
                 }
                 else if (data.StartsWith("/none") && allowShowing)
@@ -435,7 +429,7 @@ public class StoryController : MonoBehaviour
             }
             else if (data.Length > 0 && allowShowing)
             {
-                curserifu = data.Replace("[mom]",Common.mom).Replace("[player]",Common.PlayerName);
+                curserifu = data.Replace("[mom]", Common.mom).Replace("[player]", Common.PlayerName);
                 coroutine = ShowSerifu();
                 StartCoroutine(coroutine);
             }
@@ -478,7 +472,7 @@ public class StoryController : MonoBehaviour
     {
         Common.subseplayer.PlayOneShot(Common.seclips["cancel2"]);
         Common.subseplayer.PlayOneShot(seclips["ok1"]);
-        if(Common.SkipStory == "YES")
+        if (Common.SkipStory == "YES")
         {
             EndStory();
         }
