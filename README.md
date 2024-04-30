@@ -1,10 +1,5 @@
 # birdol
 
-2021/08/30
-ƒV[ƒ“Gacha‚ÌCanvas->Panel->Button‚ğPanel‚Æ“¯—ñ‚É‚µA–¼‘O‚ğStart‚É•ÏXB
-ƒV[ƒ“Gacha‚ÌCanvas->Panel‚Ì10˜AŒ‹‰Ê‚Ì•\¦‡‚ğ•ÏXi‡”Ô‚ª‚Î‚ç‚Î‚ç‚¾‚Á‚½‚Ì‚Åj
+è‚²æˆã‚²ãƒ¼ãƒ ã€Œãƒãƒ¼ãƒ‰ãƒ«â­ï¸ãƒãƒ¼ãƒã€ã®ãƒªãƒã‚¸ãƒˆãƒªã§ã™ã€‚
 
-2021/09/03
-ƒ{ƒ^ƒ“íœ
-ƒ^ƒbƒv‘€ì
-“–‘IƒAƒCƒeƒ€–¼‚ÆƒŒƒA“x•\¦
+Finalç‰ˆ(Windows Only)ã¯ã“ã¡ã‚‰: https://github.com/Project-Birdol/birdol/releases/download/v1.0.4-final/birdol-final.zip
